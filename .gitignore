@@ -1,0 +1,16 @@
+.erlang.mk.packages.*
+_rel
+deps
+ebin
+logs
+relx
+test/*.beam
+.idea
+*.iml
+release
+erl_crash.dump
+.eunit/
+log/
+log/crash.log
+.rebar/
+*.pyc

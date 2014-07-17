@@ -1,0 +1,12 @@
+{application, tetrerl,
+ [
+  {description, "Multiplayer Tetris server backend in Erlang"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { tetrerl_app, []}},
+  {env, []}
+ ]}.
