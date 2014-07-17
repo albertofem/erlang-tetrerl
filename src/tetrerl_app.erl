@@ -10,6 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
+    io:write("hello there~n"),
     tetrerl_sup:start_link().
 
 stop(_State) ->

@@ -14,3 +14,4 @@ log/
 log/crash.log
 .rebar/
 *.pyc
+rel/tetrerl
