@@ -12,7 +12,7 @@ deps_jsx = git://github.com/talentdeficit/jsx.git v2.0.4
 
 .PHONY: run
 
-run:
+run: all
 	erl -sname tetrerl -config rel/sys.config -args_file rel/vm.args \
 		-pa $PWD ebin deps/*/ebin -s tetrerl -s sync
 
