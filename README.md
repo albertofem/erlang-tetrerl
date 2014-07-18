@@ -12,8 +12,8 @@ How to run
 ----------
 
 ```
-rebar compile
-./tetrerl-server.sh
+make
+make run
 ```
 
 Game specifications
