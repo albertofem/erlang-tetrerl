@@ -1,0 +1,1 @@
+-define(LOG_INFO(Format, Args), lager:log(info, whereis(lager_event), Format, Args)).
