@@ -1,37 +1,24 @@
 -module(tetrerl_player).
 -author("albertofem").
 
--type player_state() :: {idle} | {playing, GameType :: tetrerl_game:game_type()}.
+-include("include/tetrerl.hrl").
 
 -behaviour(supervisor).
--behaviour(gen_event).
+
+-define(SERVER, ?MODULE).
 
 -export([
-  handle_event/2,
-  handle_call/2,
-  handle_info/2,
-  terminate/2,
-  code_change/3
+  start_link/0,
+  init/1
 ]).
 
--record(state, {
-  state :: player_state()
-}).
+init(_) ->
+  Procs = [
+    {session, {tetrerl_session, start_link, []}, transient, brutal_kill, worker, [tetrerl_session]},
+    {lobby, {tetrerl_lobby, start_link, []}, transient, brutal_kill, worker, [tetrerl_lobby]}
+  ],
+  {ok, {{one_for_one, 5, 10}, Procs}}.
 
-init(Args) ->
-  erlang:error(not_implemented).
-
-handle_event(Event, State) ->
-  erlang:error(not_implemented).
-
-handle_call(Request, State) ->
-  erlang:error(not_implemented).
-
-handle_info(Info, State) ->
-  erlang:error(not_implemented).
-
-terminate(Args, State) ->
-  erlang:error(not_implemented).
-
-code_change(OldVsn, State, Extra) ->
-  erlang:error(not_implemented).
+start_link() ->
+  ?LOG_INFO("Starting player server...", []),
+  supervisor:start_link({local, ?SERVER}, ?MODULE, []).

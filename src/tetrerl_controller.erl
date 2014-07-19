@@ -21,24 +21,19 @@ init({tcp, http}, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.
 
 start_link() ->
+  ?LOG_INFO("Starting master supervisor...", []),
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-init([]) ->
+init(_Args) ->
   Procs = [
     {ping, {tetrerl_ping, start_link, []}, transient, brutal_kill, worker, [tetrerl_ping]},
-    {message_handler, {}}
+    {player, {tetrerl_player, start_link, []}, transient, brutal_kill, worker, [tetrerl_player]}
   ],
   {ok, {{one_for_one, 5, 10}, Procs}}.
 
 websocket_init(_Transport, Req, _Opts) ->
   ?LOG_INFO("Initialized websocket session", []),
   {ok, Req, []}.
-
--spec(websocket_handle({text, <<>>}, term(), term())
-      -> {reply, <<>>, term(), term()}).
-
--spec(websocket_handle({text, Message :: tetrerl_message:message()}, term(), term())
-      -> {reply, <<>>, term(), term()}).
 
 websocket_handle({text, <<"ping">>}, Req, _) ->
   PingServerResponse = tetrerl_ping:ping(),
@@ -47,13 +42,14 @@ websocket_handle({text, <<"ping">>}, Req, _) ->
     pong -> {reply, {text, <<"pong">>}, Req, []};
     _ -> {reply, {text, <<"ERROR: no ping server active">>}, Req, []}
   end;
-
-websocket_handle({text, <<"player">>}, Req, _) ->
-  tetrert_player:message(Message),
-  {reply, {text, <<"Ack.">>}, Req, []};
-
-websocket_handle({text, _}, Req, _) ->
-  {reply, {text, <<"...">>}, Req, []}.
+websocket_handle({text, RawMessage}, Req, _) ->
+  Message = tetrerl_protocol:parse(RawMessage),
+  case Message of
+    {error, invalid_json} -> {reply, {text, <<"Error: Invalid JSON message">>}, Req, []};
+    {success, MessageData}
+      -> tetrerl_session:process(MessageData),
+      {ok, Req, []}
+  end.
 
 websocket_info(_, Req, _) ->
   {reply, {text, <<"...">>}, Req, []}.

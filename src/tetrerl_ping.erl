@@ -3,6 +3,8 @@
 
 -behaviour(gen_server).
 
+-include("include/tetrerl.hrl").
+
 -define(SERVER, ?MODULE).
 
 -export([
@@ -19,6 +21,7 @@
 -spec(start_link() -> atom()).
 
 start_link() ->
+  ?LOG_INFO("Starting ping server...", []),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 -spec(ping() -> {ok, pong}).
