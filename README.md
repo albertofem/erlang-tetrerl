@@ -12,7 +12,6 @@ How to run
 ----------
 
 ```
-make
 make run
 ```
 

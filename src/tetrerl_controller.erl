@@ -1,4 +1,4 @@
--module(tetrerl_handler).
+-module(tetrerl_controller).
 -author("albertofem").
 
 -include("include/tetrerl.hrl").
@@ -25,7 +25,8 @@ start_link() ->
 
 init([]) ->
   Procs = [
-    {ping, {tetrerl_ping, start_link, []}, transient, brutal_kill, worker, [tetrerl_ping]}
+    {ping, {tetrerl_ping, start_link, []}, transient, brutal_kill, worker, [tetrerl_ping]},
+    {message_handler, {}}
   ],
   {ok, {{one_for_one, 5, 10}, Procs}}.
 
@@ -33,8 +34,12 @@ websocket_init(_Transport, Req, _Opts) ->
   ?LOG_INFO("Initialized websocket session", []),
   {ok, Req, []}.
 
-websocket_handle({ping, _}, _, _) ->
-  tetrerl_ping:ping();
+-spec(websocket_handle({text, <<>>}, term(), term())
+      -> {reply, <<>>, term(), term()}).
+
+-spec(websocket_handle({text, Message :: tetrerl_message:message()}, term(), term())
+      -> {reply, <<>>, term(), term()}).
+
 websocket_handle({text, <<"ping">>}, Req, _) ->
   PingServerResponse = tetrerl_ping:ping(),
   ?LOG_INFO("Ping server response: ~w", [PingServerResponse]),
@@ -42,11 +47,16 @@ websocket_handle({text, <<"ping">>}, Req, _) ->
     pong -> {reply, {text, <<"pong">>}, Req, []};
     _ -> {reply, {text, <<"ERROR: no ping server active">>}, Req, []}
   end;
-websocket_handle({text, _}, Req, _) ->
-  {reply, {text, <<"Not implemented">>}, Req, []}.
 
-websocket_info(_, _, _) ->
-  erlang:error(not_implemented).
+websocket_handle({text, <<"player">>}, Req, _) ->
+  tetrert_player:message(Message),
+  {reply, {text, <<"Ack.">>}, Req, []};
+
+websocket_handle({text, _}, Req, _) ->
+  {reply, {text, <<"...">>}, Req, []}.
+
+websocket_info(_, Req, _) ->
+  {reply, {text, <<"...">>}, Req, []}.
 
 websocket_terminate(Reason, _, _) ->
   ?LOG_INFO("Terminated websocket session with reason: ~w", [Reason]),

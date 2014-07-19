@@ -31,7 +31,7 @@ stop(_State) ->
 
 start_websocket(Port) ->
   Dispatch = cowboy_router:compile([
-    {'_', [{"/", tetrerl_handler, []}]}
+    {'_', [{"/", tetrerl_controller, []}]}
   ]),
   {Result, Message} = cowboy:start_http(http, 1000, [{port, Port}], [
     {env, [{dispatch, Dispatch}]}
