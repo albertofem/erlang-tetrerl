@@ -9,7 +9,12 @@
 
 -export([
   start_link/0,
-  init/1
+  init/1,
+  code_change/3,
+  process/2,
+  handle_call/3,
+  handle_info/2,
+  terminate/2
 ]).
 
 init(_) ->
@@ -22,3 +27,19 @@ init(_) ->
 start_link() ->
   ?LOG_INFO("Starting player server...", []),
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+process(<<"login">>, _Args) ->
+  ?LOG_INFO("Logging in user", []),
+  tetrerl_session:to_state(idle).
+
+handle_call(_, _, _) ->
+  erlang:error(not_implemented).
+
+handle_info(_, _) ->
+  erlang:error(not_implemented).
+
+terminate(_, _) ->
+  erlang:error(not_implemented).
+
+code_change(_, _, _) ->
+  erlang:error(not_implemented).
