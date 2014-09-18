@@ -47,8 +47,7 @@ websocket_handle({text, RawMessage}, Req, _) ->
   case Message of
     {error, invalid_json} -> {reply, {text, <<"Error: Invalid JSON message">>}, Req, []};
     {success, MessageData}
-      -> tetrerl_session:process(MessageData),
-      {ok, Req, []}
+      -> {reply, {text, tetrerl_player:process_message(MessageData)}, Req, []}
   end.
 
 websocket_info(_, Req, _) ->

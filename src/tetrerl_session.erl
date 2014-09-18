@@ -5,13 +5,10 @@
 
 -behaviour(gen_server).
 
--type state() :: lobby | idle | single | multi.
-
 -define(SERVER, ?MODULE).
 
 -record(session, {
   id :: number(),
-  state :: state(),
   user_id :: number()
 }).
 
@@ -39,11 +36,10 @@ start_link() ->
   ?LOG_INFO("Starting session server...", []),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-init(_Args) ->
+init([UserID]) ->
   Session = #session{
     id = erlang:phash2({node(), now()}),
-    state = anonymous,
-    user_id = null
+    user_id = UserID
   },
   {ok, Session}.
 
@@ -58,19 +54,13 @@ to_state(State) ->
 handle_cast({message, [{<<"msg">>, Message}, {<<"args">>, Args}]}, Session) ->
   ?LOG_INFO("Handling message, current session: ~w", [Session]),
   case Session#session.state of
-    anonymous -> tetrerl_player:process(Message, Args);
+    anonymous -> tetrerl_login:login(Message, Args);
     idle -> {noreply, Session};
     lobby -> {noreply, tetrerl_lobby:process(Message)};
     single -> {noreply, tetrerl_single:process(Message)};
     multi -> {noreply, tetrert_multi:process(Message)};
     _ -> {stop, invalid_state} %% do some kind of state recovery in terminate()
   end;
-handle_cast({change_state, State}, Session) ->
-  ?LOG_INFO("Changing user state from ~w to ~w", [Session#session.state, State]),
-  case Session#session.state of
-    State -> {noreply, Session};
-    _ -> {noreply, change_state(State, Session)}
-  end.
 
 change_state(NextState, Session) ->
   NextSession = Session,

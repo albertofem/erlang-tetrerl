@@ -15,5 +15,5 @@ parse(RawMessage) ->
 
 do_parse_json(JsonMessage) ->
   Message = jsx:decode(JsonMessage),
-  ?LOG_INFO("Parsed json: ~tp", Message),
+  ?LOG_INFO("Parsed json: ~tp", [Message]),
   Message.
