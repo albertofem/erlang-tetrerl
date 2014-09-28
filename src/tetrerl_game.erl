@@ -1,20 +1,18 @@
 -module(tetrerl_game).
 -author("albertofem").
 
+-include("include/tetrerl.hrl").
+
 -behaviour(gen_server).
 
 -define(GAME_SERVER, ?MODULE).
 
--record(command, {
-  name :: term(),
-  args :: list()
-}).
-
 -record(state, {
+  game :: module(),
   board :: board(),
   points :: number(),
   lines :: number(),
-  elapses :: number()
+  elapsed :: number()
 }).
 
 -type board() :: [term()].
@@ -29,7 +27,7 @@
 % Public API
 -export([
   start_game/1,
-  handle_command/0
+  process_packet/1
 ]).
 
 % Gen server
@@ -42,20 +40,42 @@
   code_change/3
 ]).
 
--callback init_state(#state{}) -> game_state().
--callback process_command(#command{}) -> game_state().
+-callback handle_command(Name :: string(), GameState :: #state{}, Args :: list()) -> game_state().
+-callback handle_command(Name :: string(), GameState :: #state{}) -> game_state().
 
-start_game(Module) ->
-  gen_server:start_link({local, ?GAME_SERVER}, Module, [], []).
+start_game(DelegateServer) ->
+  gen_server:start_link({local, ?GAME_SERVER}, ?GAME_SERVER, DelegateServer, []).
 
-init(_Args) ->
-  erlang:error(not_implemented).
+handle_call({command, [Name, Args]}, _From, GameState) ->
+  GameServer = GameState#state.game,
+  ?LOG_INFO("Calling module ~tp command ~tp with args ~tp", [GameServer, Name, Args]),
+  GameServer:handle_command(Name, GameState, Args),
+  {reply, ok, GameState};
+handle_call({command, Name}, _From, GameState) ->
+  GameServer = GameState#state.game,
+  ?LOG_INFO("Calling module ~tp command ~tp with no args", [GameServer, Name]),
+  GameServer:handle_command(Name, GameState),
+  {reply, ok, GameState}.
 
-handle_call(_, _, _) ->
-  erlang:error(not_implemented).
+process_packet([[{<<"cmd">>, Name}, {<<"args">>, Args}]|Tail]) ->
+  gen_server:call(?GAME_SERVER, {command, [Name, Args]}),
+  process_packet(Tail);
+process_packet([[{<<"cmd">>,Name}]]) ->
+  gen_server:call(?GAME_SERVER, {command, Name});
+process_packet(Packet) ->
+  ?LOG_WARN("Empty or invalid packet: ~tp", [Packet]),
+  {reply, invalid_packet}.
 
-handle_cast(_, _) ->
-  erlang:error(not_implemented).
+init(DelegateServer) ->
+  GameState = #state{
+    game = DelegateServer,
+    board = [],
+    points = 0,
+    lines = 0,
+    elapsed = 0
+  },
+  ?LOG_INFO("Starting game with state: ~tp", [GameState]),
+  {ok, GameState}.
 
 handle_info(_, _) ->
   erlang:error(not_implemented).
@@ -66,6 +86,5 @@ terminate(_, _) ->
 code_change(_, _, _) ->
   erlang:error(not_implemented).
 
-
-handle_command() ->
+handle_cast(_, __) ->
   error(not_implemented).

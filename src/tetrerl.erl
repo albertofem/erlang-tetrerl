@@ -1,7 +1,9 @@
 -module(tetrerl).
 -author("albertofem").
 
--export([start/0]).
+-export([
+  start/0
+]).
 
 -spec(start() -> ok | {error, Reason :: term()}).
 start() ->

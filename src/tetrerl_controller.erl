@@ -35,19 +35,21 @@ websocket_init(_Transport, Req, _Opts) ->
   ?LOG_INFO("Initialized websocket session", []),
   {ok, Req, []}.
 
-websocket_handle({text, <<"ping">>}, Req, _) ->
+websocket_handle({text, <<"\"ping\"">>}, Req, _) ->
   PingServerResponse = tetrerl_ping:ping(),
   ?LOG_INFO("Ping server response: ~w", [PingServerResponse]),
   case PingServerResponse of
-    pong -> {reply, {text, <<"pong">>}, Req, []};
-    _ -> {reply, {text, <<"ERROR: no ping server active">>}, Req, []}
+    pong -> {reply, {text, <<"\"pong\"">>}, Req, []};
+    _ -> {reply, {text, <<"error">>}, Req, []}
   end;
 websocket_handle({text, RawMessage}, Req, _) ->
   Message = tetrerl_protocol:parse(RawMessage),
   case Message of
-    {error, invalid_json} -> {reply, {text, <<"Error: Invalid JSON message">>}, Req, []};
+    {error, invalid_json} -> {reply, {text, jsx:encode([{<<"result">>, false}, {<<"response">>, <<"Invalid JSON payload">>}])}, Req, []};
     {success, MessageData}
-      -> {reply, {text, tetrerl_player:process_message(MessageData)}, Req, []}
+      ->
+      {Result, Response} = tetrerl_player:process_message(MessageData),
+      {reply, {text, jsx:encode([{<<"result">>, Result}, {<<"response">>, Response}])}, Req, []}
   end.
 
 websocket_info(_, Req, _) ->

@@ -15,16 +15,13 @@
   getenv/1
 ]).
 
--spec(start(StartType :: application:start_type(), StartArgs :: term()) ->
-  {'ok', pid()} | {'ok', pid(), State :: term()} | {'error', Reason :: term()}).
-
-start(_StartType, _StartArgs) ->
+start(_, _) ->
     ?LOG_INFO("Welcome to Tetrerl server backend", []),
     start_websocket(getenv(port)).
 
 -spec(stop(State :: term()) -> ok).
 
-stop(_State) ->
+stop(_) ->
     ok.
 
 -spec(start_websocket(Port :: number()) -> {ok, term()}).

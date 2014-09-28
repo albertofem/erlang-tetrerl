@@ -5,81 +5,90 @@
 
 -behaviour(gen_server).
 
--define(SERVER, ?MODULE).
+-define(SESSION_SERVER, ?MODULE).
+
+-type game_view() :: lobby | idle.
+-type game_mode() :: none | single | multi.
+
+-record(player, {
+  id :: number(),
+  pid :: pid(),
+  view :: game_view(),
+  mode :: game_mode()
+}).
 
 -record(session, {
   id :: number(),
-  user_id :: number()
+  player :: #player{id :: number(), pid :: pid(), view :: game_view(), mode :: game_mode()}
 }).
 
--export_type([state/0]).
+% API
+-export([
+  process_packet/1,
+  init_game_session/1
+]).
 
-%% API
+%% Gen server
 -export([
   init/1,
   start_link/0,
-  handle_call/3,
-  handle_cast/2,
   handle_info/2,
+  handle_cast/2,
+  handle_call/3,
   terminate/2,
-  code_change/3,
-  process/1,
-  to_state/1
-]).
-
-%% Internal API
--export([
-  change_state/2
+  code_change/3
 ]).
 
 start_link() ->
   ?LOG_INFO("Starting session server...", []),
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_server:start_link({local, ?SESSION_SERVER}, ?MODULE, [], []).
 
-init([UserID]) ->
+init(_) ->
+  Player = #player{
+    id = erlang:phash2({node(), now()}),
+    view = lobby,
+    mode = none
+  },
   Session = #session{
     id = erlang:phash2({node(), now()}),
-    user_id = UserID
+    player = Player
   },
   {ok, Session}.
 
-process(Message) ->
-  ?LOG_INFO("Processing message: ~tp", [Message]),
-  gen_server:cast(?MODULE, {message, Message}).
+init_game_session(Mode) ->
+  gen_server:call(?SESSION_SERVER, {init_game_session, Mode}, 5).
 
-to_state(State) ->
-  ?LOG_INFO("Processing session state change: ~w", [State]),
-  gen_server:cast(?MODULE, {change_state, State}).
+process_packet(Commands) ->
+  gen_server:cast(?SESSION_SERVER, {packet, Commands}).
 
-handle_cast({message, [{<<"msg">>, Message}, {<<"args">>, Args}]}, Session) ->
-  ?LOG_INFO("Handling message, current session: ~w", [Session]),
-  case Session#session.state of
-    anonymous -> tetrerl_login:login(Message, Args);
-    idle -> {noreply, Session};
-    lobby -> {noreply, tetrerl_lobby:process(Message)};
-    single -> {noreply, tetrerl_single:process(Message)};
-    multi -> {noreply, tetrert_multi:process(Message)};
-    _ -> {stop, invalid_state} %% do some kind of state recovery in terminate()
-  end;
-
-change_state(NextState, Session) ->
-  NextSession = Session,
-  NextSession = #session{
-    id = Session#session.id,
-    state = NextState,
-    user_id = Session#session.user_id
+handle_call({init_game_session, Mode}, From, Session) ->
+  Player = Session#session.player#player{
+    id = From,
+    pid = From,
+    mode = Mode
   },
-  NextSession.
+  NewSession = Session#session{
+    player = Player
+  },
+  ?LOG_INFO("Initialized game session: ~tp", [NewSession]),
+  {reply, {true, [{<<"session_id">>, Session#session.id}]}, NewSession}.
 
-handle_call(_, _, _) ->
-  erlang:error(not_implemented).
+handle_cast({packet, Commands}, Session) ->
+  case Session#session.player#player.mode of
+    single ->
+      tetrerl_single:process_packet(Commands),
+      {noreply, Session};
+    _ ->
+      ?LOG_WARN("No game mode selected, ignoring packet", []),
+      {noreply, Session}
+  end.
 
 handle_info(_, _) ->
   erlang:error(not_implemented).
 
 terminate(Reason, _State) ->
   ?LOG_INFO("Terminating session: ~w", [Reason]),
-  erlang:error(not_implemented).
+  {ok}.
 
 code_change(_, _, _) ->
   erlang:error(not_implemented).
