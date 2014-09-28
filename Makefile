@@ -10,6 +10,8 @@ dep_lager = git://github.com/basho/lager.git 2.0.3
 dep_eredis = git://github.com/wooga/eredis.git master
 dep_jsx = git://github.com/talentdeficit/jsx.git v2.0.4
 
+COMPILE_FIRST = tetrerl_game
+
 .PHONY: run
 
 run: all

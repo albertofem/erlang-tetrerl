@@ -4,15 +4,13 @@
 -behaviour(tetrerl_game).
 -behaviour(gen_event).
 
--record(enemy_state, {
-  board :: term()
-}).
+%% -record(enemy_state, {
+%%   board :: term()
+%% }).
 
 -export([
-  init_state/0,
-  get_state/0,
-  get_enemy_state/0,
-  link_enemy_server/1,
+  handle_command/3,
+  handle_command/2,
   init/1,
   handle_event/2,
   handle_call/2,
@@ -21,16 +19,10 @@
   code_change/3
 ]).
 
-init_state() ->
+handle_command(_Name, _GameState, _Args) ->
   erlang:error(not_implemented).
 
-get_state() ->
-  erlang:error(not_implemented).
-
-get_enemy_state() ->
-  erlang:error(not_implemented).
-
-link_enemy_server(_Pid) ->
+handle_command(_Name, _GameState) ->
   erlang:error(not_implemented).
 
 init(_InitArgs) ->
