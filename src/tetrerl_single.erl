@@ -2,6 +2,7 @@
 -author("albertofem").
 
 -include("include/tetrerl.hrl").
+-include("include/tetrerl_game.hrl").
 
 -define(SINGLE_GAME, ?MODULE).
 
@@ -28,8 +29,12 @@ process_packet(Commands) ->
 get_state() ->
   erlang:error(not_implemented).
 
-handle_command(Name, _GameState, _Args) ->
-  ?LOG_INFO("Processing message in single player: ~tp", [Name]).
+handle_command(<<"update_board">>, GameState, Args) ->
+  ?LOG_INFO("Processing update_board message in single player", []),
+  NewGameState = GameState#game_state{
+    board = Args
+  },
+  NewGameState.
 
-handle_command(Name, _GameState) ->
-  ?LOG_INFO("Processing message in single player: ~tp", [Name]).
+handle_command(_Name, _GameState) ->
+  erlang:error(not_implemented).

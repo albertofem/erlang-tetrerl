@@ -25,8 +25,10 @@ init(_) ->
   {ok, {{one_for_one, 5, 10}, Procs}}.
 
 process_message([{<<"msg">>, <<"start_single_game">>}]) ->
-  supervisor:start_child(?PLAYER_SERVER, {single,
-    {tetrerl_single, start_game, []}, transient, brutal_kill, worker, [tetrerl_single]}
+  supervisor:start_child(?PLAYER_SERVER,
+    {single,
+      {tetrerl_single, start_game, []}, transient, brutal_kill, worker, [tetrerl_single]
+    }
   ),
   tetrerl_session:init_game_session(single);
 
