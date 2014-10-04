@@ -32,6 +32,7 @@
   code_change/3
 ]).
 
+% Behaviour callbacks
 -callback handle_command(Name :: string(), GameState :: #game_state{}, Args :: list()) -> game_state().
 -callback handle_command(Name :: string(), GameState :: #game_state{}) -> game_state().
 
@@ -47,23 +48,24 @@ init(DelegateServer) ->
     elapsed = 0
   },
   ?LOG_INFO("Starting game with state: ~tp", [GameState]),
+  erlang:start_timer(10000, self(), fetch_state),
   {ok, GameState}.
 
 %% Command server handling
 
 handle_call({command, [Name, Args]}, _From, GameState) ->
   GameServer = GameState#game_state.game,
-  ?LOG_INFO("Calling module ~tp command ~tp with args ~tp", [GameServer, Name, Args]),
   NewGameState = GameServer:handle_command(Name, GameState, Args),
-  ?LOG_INFO("Processed command. New state: ~tp", [NewGameState]),
   {reply, ok, NewGameState};
 
 handle_call({command, Name}, _From, GameState) ->
   GameServer = GameState#game_state.game,
-  ?LOG_INFO("Calling module ~tp command ~tp with no args", [GameServer, Name]),
   NewGameState = GameServer:handle_command(Name, GameState),
-  ?LOG_INFO("Processed command. New state: ~tp", [NewGameState]),
-  {reply, ok, NewGameState}.
+  {reply, ok, NewGameState};
+
+handle_call(fetch_state, _From, GameState) ->
+  ?LOG_INFO("Fetching game state..", []),
+  {reply, ok, GameState}.
 
 %% Packet processing
 
@@ -82,8 +84,8 @@ process_packet(Packet) ->
   ?LOG_WARN("Empty or invalid packet: ~tp", [Packet]),
   {reply, invalid_packet}.
 
-handle_info(_, _) ->
-  erlang:error(not_implemented).
+handle_info(fetch_state, GameState) ->
+  tetrerl_controller:websocket_init([], GameState, []).
 
 terminate(_, _) ->
   erlang:error(not_implemented).

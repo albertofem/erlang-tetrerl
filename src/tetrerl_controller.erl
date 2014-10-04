@@ -42,6 +42,7 @@ websocket_handle({text, <<"\"ping\"">>}, Req, _) ->
     pong -> {reply, {text, <<"\"pong\"">>}, Req, []};
     _ -> {reply, {text, <<"error">>}, Req, []}
   end;
+
 websocket_handle({text, RawMessage}, Req, _) ->
   Message = tetrerl_protocol:parse(RawMessage),
   case Message of
@@ -52,8 +53,8 @@ websocket_handle({text, RawMessage}, Req, _) ->
       {reply, {text, jsx:encode([{<<"result">>, Result}, {<<"response">>, Response}])}, Req, []}
   end.
 
-websocket_info(_, Req, _) ->
-  {reply, {text, <<"...">>}, Req, []}.
+websocket_info(message, Req, _) ->
+  {reply, {text, jsx:encode([{<<"message">>, Req}]), Req, []}}.
 
 websocket_terminate(Reason, _, _) ->
   ?LOG_INFO("Terminated websocket session with reason: ~w", [Reason]),

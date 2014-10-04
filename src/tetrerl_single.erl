@@ -34,7 +34,15 @@ handle_command(<<"update_board">>, GameState, Args) ->
   NewGameState = GameState#game_state{
     board = Args
   },
-  NewGameState.
+  NewGameState;
+
+handle_command(<<"move_y">>, GameState, _Args) ->
+  ?LOG_INFO("Moving Y axis", []),
+  GameState;
+
+handle_command(<<"move_x">>, GameState, _Args) ->
+  ?LOG_INFO("Moving X axis", []),
+  GameState.
 
 handle_command(_Name, _GameState) ->
   erlang:error(not_implemented).
